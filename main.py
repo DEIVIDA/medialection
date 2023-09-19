@@ -1,3 +1,4 @@
+from typing import Any
 import PySimpleGUI as sg
 from sqlalchemy.orm import sessionmaker
 import models
@@ -203,13 +204,29 @@ def main(session=session):
             enable_events=True,
             select_mode=sg.SELECT_MODE_EXTENDED,
         )],
-        [sg.Button('Add', key='-ADD-SONG-'), sg.Button('Remove', key='-REMOVE-SONGS-')],
+        [sg.Text('', key='-ARTISTS-LABEL-'), sg.Text('', key='-ARTISTS-')],
+        [sg.Button('Add', key='-ADD-SONG-'), sg.Button('Remove', key='-REMOVE-SONGS-', disabled=True)],
     ]
     window = sg.Window('Media\'lection', layout, finalize=True)
     while True:
         event, values = window.read()
         if event == sg.WINDOW_CLOSED:
             break
+        if event == '-SONGS-':
+            if len(values['-SONGS-']) > 0:
+                window['-REMOVE-SONGS-'].update(disabled=False)
+                window['-ARTISTS-LABEL-'].update('Artists: ')
+                selected_songs = []
+                selected_artists = []
+                for index in values['-SONGS-']:
+                    selected_songs.append(db_songs[index])
+                    # selected_artists.extend(db_songs[index].artists)
+                    for artist in db_songs[index].artists:
+                        if artist not in selected_artists:
+                            selected_artists.append(artist)
+                window['-ARTISTS-'].update(", ".join([artist.name for artist in selected_artists]))
+            else:
+                window['-REMOVE-SONGS-'].update(disabled=True)
         if event == '-ADD-SONG-':
             db_songs = add_song(window, session)
         if event == '-REMOVE-SONGS-':
