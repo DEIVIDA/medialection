@@ -20,9 +20,6 @@ def load_genres(session=session):
     db_genres = session.query(models.Genre).all()
     return db_genres # [genre.name for genre in db_genres]
 
-def confirm_add_song(title, authors, duration, genre, session=session) -> bool:
-    return True
-
 def manage_artists(parent_window: sg.Window, session=session):
     parent_window.hide()
     layout = [
@@ -115,6 +112,36 @@ def manage_genres(parent_window: sg.Window, session=session):
     parent_window['-GENRE-'].update(values=load_genres(session))
     parent_window.un_hide()
 
+def validate_song(title, authors, duration, genre) -> int:
+    errors = []
+    if not len(title) > 0:
+        errors.append("title cannot be empty")
+    if not len(duration) > 0:
+        errors.append("duration must be not empty")
+    try:
+        duration = int(duration)
+    except ValueError:
+        errors.append("duration must be a number in seconds")
+    if not duration > 0:
+        errors.append("duration must be a positive number")
+    if not len(authors) > 0:
+        errors.append("there must be at least one artist")
+    if not genre or not isinstance(genre, models.Genre):
+        errors.append("there must be a genre set")
+    if len(errors) > 0:
+        sg.popup(";\n".join(errors))
+    else:
+        return duration
+
+def confirm_add_song(title, artists, duration, genre, session=session) -> bool:
+    duration = validate_song(title, artists, duration, genre)
+    if duration:
+        new_song = models.Song(name=title, duration=duration, genre=genre)
+        new_song.artists = artists
+        session.add(new_song)
+        session.commit()
+        return True
+
 def add_song(parent_window: sg.Window, session=session):
     parent_window.hide()
     layout = [
@@ -124,7 +151,7 @@ def add_song(parent_window: sg.Window, session=session):
             sg.Button('\u270F', key='-MANAGE-ARTISTS-'), 
             sg.Listbox(values=load_artists(session), size=(20, 7), key='-ARTISTS-', select_mode=sg.SELECT_MODE_MULTIPLE),
         ],
-        [sg.Text('duration (sec.)', 15), sg.Input(size=4, key='-DURATION-')],
+        [sg.Text('duration (sec.)', 15), sg.Input('0', size=4, key='-DURATION-')],
         [
             sg.Text('genre', 11), 
             sg.Button('\u270F', key='-MANAGE-GENRES-'),
@@ -146,6 +173,7 @@ def add_song(parent_window: sg.Window, session=session):
         if event == '-MANAGE-GENRES-':
             manage_genres(parent_window=window, session=session)
     parent_window.un_hide()
+    parent_window['-SONGS-'].update(values=load_songs(session))
     window.close()
 
 def main(session=session):
