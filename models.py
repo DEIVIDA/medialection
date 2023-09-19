@@ -36,6 +36,12 @@ class Song(Base):
 
     def __repr__(self):
         return f"{self.name}"
+    
+    @property
+    def display_duration(self):
+        minutes = self.duration // 60
+        seconds = self.duration % 60
+        return f"{minutes:d}:{seconds:02d}"
 
 
 class Artist(Base):

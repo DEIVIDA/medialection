@@ -10,7 +10,7 @@ def load_songs(session=session):
     db_songs = session.query(models.Song).all()
     songs = []
     for song in db_songs:
-        songs.append([song.name, song.duration, song.genre])
+        songs.append([song.name, song.display_duration, song.genre])
     return songs, db_songs
 
 def load_artists(session=session):
