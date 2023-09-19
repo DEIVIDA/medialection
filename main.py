@@ -192,6 +192,22 @@ def remove_songs(removing_rows, db_songs, song_table:sg.Table, session=session):
     song_table.update(values=songs)
     return db_songs
 
+def process_song_selection(values, window:sg.Window, db_songs:list[models.Song]):
+    if len(values['-SONGS-']) > 0:
+        window['-REMOVE-SONGS-'].update(disabled=False)
+        window['-ARTISTS-LABEL-'].update('Artists: ')
+        selected_songs = []
+        selected_artists = []
+        for index in values['-SONGS-']:
+            selected_songs.append(db_songs[index])
+            # selected_artists.extend(db_songs[index].artists)
+            for artist in db_songs[index].artists:
+                if artist not in selected_artists:
+                    selected_artists.append(artist)
+        window['-ARTISTS-'].update(", ".join([artist.name for artist in selected_artists]))
+    else:
+        window['-REMOVE-SONGS-'].update(disabled=True)
+
 def main(session=session):
     songs, db_songs = load_songs(session)
     layout = [
@@ -213,20 +229,7 @@ def main(session=session):
         if event == sg.WINDOW_CLOSED:
             break
         if event == '-SONGS-':
-            if len(values['-SONGS-']) > 0:
-                window['-REMOVE-SONGS-'].update(disabled=False)
-                window['-ARTISTS-LABEL-'].update('Artists: ')
-                selected_songs = []
-                selected_artists = []
-                for index in values['-SONGS-']:
-                    selected_songs.append(db_songs[index])
-                    # selected_artists.extend(db_songs[index].artists)
-                    for artist in db_songs[index].artists:
-                        if artist not in selected_artists:
-                            selected_artists.append(artist)
-                window['-ARTISTS-'].update(", ".join([artist.name for artist in selected_artists]))
-            else:
-                window['-REMOVE-SONGS-'].update(disabled=True)
+            process_song_selection(values, window, db_songs)
         if event == '-ADD-SONG-':
             db_songs = add_song(window, session)
         if event == '-REMOVE-SONGS-':
