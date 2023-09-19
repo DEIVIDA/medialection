@@ -12,33 +12,119 @@ def load_songs(session=session):
         songs.append([song.name, song.duration, song.genre])
     return songs
 
-def load_authors(session=session):
+def load_artists(session=session):
     db_artists = session.query(models.Artist).all()
-    return [[artist.name] for artist in db_artists]
+    return db_artists # [artist.name for artist in db_artists]
 
 def load_genres(session=session):
     db_genres = session.query(models.Genre).all()
-    return [[genre.name] for genre in db_genres]
+    return db_genres # [genre.name for genre in db_genres]
 
 def confirm_add_song(title, authors, duration, genre, session=session) -> bool:
     return True
 
-def manage_authors(parent_window: sg.Window, session=session):
-    pass
+def manage_artists(parent_window: sg.Window, session=session):
+    parent_window.hide()
+    layout = [
+        [sg.Listbox(values=load_artists(), size=(20, 7), key='-ARTISTS-', enable_events=True, select_mode=sg.SELECT_MODE_MULTIPLE)],
+        [sg.Input(size=20, key='-NAME-')], 
+        [sg.Button('Add', key='-ADD-'), sg.Button('Update', key='-UPDATE-', disabled=True), sg.Button('Delete', key='-DELETE-', disabled=True)],
+    ]
+    window = sg.Window('Artists', layout, finalize=True)
+    while True:
+        event, values = window.read()
+        if event == sg.WINDOW_CLOSED:
+            break
+        if event == '-ARTISTS-':
+            if len(values['-ARTISTS-']) > 0:
+                window['-NAME-'].update(values['-ARTISTS-'][0])
+                window['-UPDATE-'].update(disabled=False)
+                window['-DELETE-'].update(disabled=False)
+            else:
+                window['-UPDATE-'].update(disabled=True)
+                window['-DELETE-'].update(disabled=True)
+        if event == '-UPDATE-':
+            artist:models.Artist = values['-ARTISTS-'][0]
+            if len(values['-NAME-']) > 0 and not session.query(models.Artist).filter_by(name=values['-NAME-']).exists():
+                artist.name = values['-NAME-']
+                session.add(artist)
+                session.commit()
+                window['-ARTISTS-'].update(values=load_artists(session))
+                window['-NAME-'].update('')
+            else:
+                sg.popup("name cannot be empty", title='ERROR')
+        if event == '-ADD-':
+            if len(values['-NAME-']) > 0 and not session.query(models.Artist).filter_by(name=values['-NAME-']).exists():
+                session.add(models.Artist(name=values['-NAME-']))
+                session.commit()
+                window['-ARTISTS-'].update(values=load_artists(session))
+                window['-NAME-'].update('')
+            else:
+                sg.popup("name cannot be empty", title='ERROR')
+        if event == '-DELETE-':
+            for artist in values['-ARTISTS-']:
+                session.delete(artist)
+                session.commit()
+                window['-ARTISTS-'].update(values=load_artists(session))
+    parent_window['-ARTISTS-'].update(values=load_artists(session))
+    parent_window.un_hide()
 
 def manage_genres(parent_window: sg.Window, session=session):
-    pass
+    parent_window.hide()
+    layout = [
+        [sg.Listbox(values=load_genres(), size=(20, 7), key='-GENRES-', enable_events=True, select_mode=sg.SELECT_MODE_MULTIPLE)],
+        [sg.Input(size=20, key='-NAME-')], 
+        [sg.Button('Add', key='-ADD-'), sg.Button('Update', key='-UPDATE-', disabled=True), sg.Button('Delete', key='-DELETE-', disabled=True)],
+    ]
+    window = sg.Window('Genres', layout, finalize=True)
+    while True:
+        event, values = window.read()
+        if event == sg.WINDOW_CLOSED:
+            break
+        if event == '-GENRES-':
+            if len(values['-GENRES-']) > 0:
+                window['-NAME-'].update(values['-GENRES-'][0])
+                window['-UPDATE-'].update(disabled=False)
+                window['-DELETE-'].update(disabled=False)
+            else:
+                window['-UPDATE-'].update(disabled=True)
+                window['-DELETE-'].update(disabled=True)
+        if event == '-UPDATE-':
+            genre:models.Genre = values['-GENRES-'][0]
+            if len(values['-NAME-']) > 0 and not session.query(models.Genre).filter_by(name=values['-NAME-']).exists():
+                genre.name = values['-NAME-']
+                session.add(genre)
+                session.commit()
+                window['-GENRES-'].update(values=load_genres(session))
+                window['-NAME-'].update('')
+            else:
+                sg.popup("name cannot be empty", title='ERROR')
+        if event == '-ADD-':
+            if len(values['-NAME-']) > 0 and not session.query(models.Genre).filter_by(name=values['-NAME-']).exists():
+                session.add(models.Genre(name=values['-NAME-']))
+                session.commit()
+                window['-GENRES-'].update(values=load_genres(session))
+                window['-NAME-'].update('')
+            else:
+                sg.popup("name cannot be empty", title='ERROR')
+        if event == '-DELETE-':
+            for genre in values['-GENRES-']:
+                session.delete(genre)
+                session.commit()
+                window['-GENRES-'].update(values=load_genres(session))
+    parent_window['-GENRE-'].update(values=load_genres(session))
+    parent_window.un_hide()
 
 def add_song(parent_window: sg.Window, session=session):
     parent_window.hide()
     layout = [
         [sg.Text('title', 15), sg.Input(size=20, key='-TITLE-')],
         [
-            sg.Text('select author(s)', 11), 
-            sg.Button('\u270F', key='-MANAGE-AUTHORS-'), 
-            sg.Listbox(values=load_authors(session), size=(20, 7), key='-AUTHORS-'),
+            sg.Text('select artist(s)', 11), 
+            sg.Button('\u270F', key='-MANAGE-ARTISTS-'), 
+            sg.Listbox(values=load_artists(session), size=(20, 7), key='-ARTISTS-', select_mode=sg.SELECT_MODE_MULTIPLE),
         ],
-        [sg.Text('duration (s)', 15), sg.Input(size=4, key='-DURATION-')],
+        [sg.Text('duration (sec.)', 15), sg.Input(size=4, key='-DURATION-')],
         [
             sg.Text('genre', 11), 
             sg.Button('\u270F', key='-MANAGE-GENRES-'),
@@ -52,11 +138,11 @@ def add_song(parent_window: sg.Window, session=session):
         if event == sg.WINDOW_CLOSED:
             break
         if event == '-CONFIRM-':
-            success = confirm_add_song(values['-TITLE-'], values['-AUTHORS-'], values['-DURATION-'], values['-GENRE-'], session)
+            success = confirm_add_song(values['-TITLE-'], values['-ARTISTS-'], values['-DURATION-'], values['-GENRE-'], session)
             if success:
                 break
-        if event == '-MANAGE-AUTHORS-':
-            manage_authors(parent_window=window, session=session)
+        if event == '-MANAGE-ARTISTS-':
+            manage_artists(parent_window=window, session=session)
         if event == '-MANAGE-GENRES-':
             manage_genres(parent_window=window, session=session)
     parent_window.un_hide()

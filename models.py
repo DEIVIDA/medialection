@@ -22,7 +22,7 @@ class Genre(Base):
     songs = relationship('Song', back_populates='genre')
 
     def __repr__(self):
-        return f"({self.name})"
+        return f"{self.name}"
 
 
 class Song(Base):
@@ -35,7 +35,7 @@ class Song(Base):
     artists = relationship('Artist', secondary=table_song_artist, back_populates='songs')
 
     def __repr__(self):
-        return f"({self.name})"
+        return f"{self.name}"
 
 
 class Artist(Base):
@@ -45,7 +45,7 @@ class Artist(Base):
     songs = relationship('Song', secondary=table_song_artist, back_populates='artists')
 
     def __repr__(self):
-        return f"({self.name})"
+        return f"{self.name}"
 
 
 Base.metadata.create_all(db_engine)
