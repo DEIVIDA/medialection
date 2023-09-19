@@ -45,22 +45,22 @@ def manage_artists(parent_window: sg.Window, session=session):
                 window['-DELETE-'].update(disabled=True)
         if event == '-UPDATE-':
             artist:models.Artist = values['-ARTISTS-'][0]
-            if len(values['-NAME-']) > 0 and not session.query(models.Artist).filter_by(name=values['-NAME-']).exists():
+            if len(values['-NAME-']) > 0 and not session.query(models.Artist).filter_by(name=values['-NAME-']).all():
                 artist.name = values['-NAME-']
                 session.add(artist)
                 session.commit()
                 window['-ARTISTS-'].update(values=load_artists(session))
                 window['-NAME-'].update('')
             else:
-                sg.popup("name cannot be empty", title='ERROR')
+                sg.popup("name cannot be empty and must be unique", title='ERROR')
         if event == '-ADD-':
-            if len(values['-NAME-']) > 0 and not session.query(models.Artist).filter_by(name=values['-NAME-']).exists():
+            if len(values['-NAME-']) > 0 and not session.query(models.Artist).filter_by(name=values['-NAME-']).all():
                 session.add(models.Artist(name=values['-NAME-']))
                 session.commit()
                 window['-ARTISTS-'].update(values=load_artists(session))
                 window['-NAME-'].update('')
             else:
-                sg.popup("name cannot be empty", title='ERROR')
+                sg.popup("name cannot be empty and must be unique", title='ERROR')
         if event == '-DELETE-':
             for artist in values['-ARTISTS-']:
                 session.delete(artist)
@@ -91,22 +91,22 @@ def manage_genres(parent_window: sg.Window, session=session):
                 window['-DELETE-'].update(disabled=True)
         if event == '-UPDATE-':
             genre:models.Genre = values['-GENRES-'][0]
-            if len(values['-NAME-']) > 0 and not session.query(models.Genre).filter_by(name=values['-NAME-']).exists():
+            if len(values['-NAME-']) > 0 and not session.query(models.Genre).filter_by(name=values['-NAME-']).all():
                 genre.name = values['-NAME-']
                 session.add(genre)
                 session.commit()
                 window['-GENRES-'].update(values=load_genres(session))
                 window['-NAME-'].update('')
             else:
-                sg.popup("name cannot be empty", title='ERROR')
+                sg.popup("name cannot be empty and must be unique", title='ERROR')
         if event == '-ADD-':
-            if len(values['-NAME-']) > 0 and not session.query(models.Genre).filter_by(name=values['-NAME-']).exists():
+            if len(values['-NAME-']) > 0 and not session.query(models.Genre).filter_by(name=values['-NAME-']).all():
                 session.add(models.Genre(name=values['-NAME-']))
                 session.commit()
                 window['-GENRES-'].update(values=load_genres(session))
                 window['-NAME-'].update('')
             else:
-                sg.popup("name cannot be empty", title='ERROR')
+                sg.popup("name cannot be empty and must be unique", title='ERROR')
         if event == '-DELETE-':
             for genre in values['-GENRES-']:
                 session.delete(genre)
