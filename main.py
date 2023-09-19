@@ -10,7 +10,7 @@ def load_songs(session=session):
     songs = []
     for song in db_songs:
         songs.append([song.name, song.duration, song.genre])
-    return songs
+    return songs, db_songs
 
 def load_artists(session=session):
     db_artists = session.query(models.Artist).all()
@@ -173,19 +173,37 @@ def add_song(parent_window: sg.Window, session=session):
         if event == '-MANAGE-GENRES-':
             manage_genres(parent_window=window, session=session)
     parent_window.un_hide()
-    parent_window['-SONGS-'].update(values=load_songs(session))
+    songs, db_songs = load_songs(session)
+    parent_window['-SONGS-'].update(values=songs)
     window.close()
+    return db_songs
+
+def remove_songs(removing_rows, db_songs, song_table:sg.Table, session=session):
+    removing_songs = []
+    for row_index in removing_rows:
+        removing_songs.append(db_songs[row_index])
+    confirmation = sg.popup_yes_no(f'Are you sure to remove these songs?:\n{", ".join([song.name for song in removing_songs])}')
+    if confirmation == "Yes":
+        for song in removing_songs:
+            session.delete(song)
+        session.commit()
+    songs, db_songs = load_songs(session)
+    song_table.update(values=songs)
+    return db_songs
 
 def main(session=session):
-    songs = load_songs(session)
+    songs, db_songs = load_songs(session)
     layout = [
         [sg.Table(
             values=songs,
             headings=['title', 'duration', 'genre'],
             key='-SONGS-',
-            # size=(50, 20),
+            size=(50, 20),
+            justification='center',
+            enable_events=True,
+            select_mode=sg.SELECT_MODE_EXTENDED,
         )],
-        [sg.Button('Add', key='-ADD-SONG-')],
+        [sg.Button('Add', key='-ADD-SONG-'), sg.Button('Remove', key='-REMOVE-SONGS-')],
     ]
     window = sg.Window('Media\'lection', layout, finalize=True)
     while True:
@@ -193,7 +211,9 @@ def main(session=session):
         if event == sg.WINDOW_CLOSED:
             break
         if event == '-ADD-SONG-':
-            add_song(window, session)
+            db_songs = add_song(window, session)
+        if event == '-REMOVE-SONGS-':
+            db_songs = remove_songs(values['-SONGS-'], db_songs, window['-SONGS-'], session)
     window.close()
 
 main()
