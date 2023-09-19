@@ -18,7 +18,7 @@ table_song_artist = Table(
 class Genre(Base):
     __tablename__ = 'genre'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False, unique=True)
     songs = relationship('Song', back_populates='genre')
 
     def __repr__(self):
@@ -41,7 +41,7 @@ class Song(Base):
 class Artist(Base):
     __tablename__ = 'artist'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), nullable=False)
+    name = Column(String(100), nullable=False, unique=True)
     songs = relationship('Song', secondary=table_song_artist, back_populates='artists')
 
     def __repr__(self):
